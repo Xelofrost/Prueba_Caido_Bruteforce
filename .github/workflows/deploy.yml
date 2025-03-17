@@ -1,0 +1,28 @@
+name: Deploy to Linode
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Install sshpass
+      run: sudo apt-get install -y sshpass
+
+    - name: Create .ssh directory
+      run: mkdir -p ~/.ssh
+
+    - name: Add remote host to known_hosts
+      run: ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+
+    - name: Execute command on VPS
+      env:
+        SSHPASS: ${{ secrets.SSH_PASSWORD }}
+      run: sshpass -e ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "pm2 stop web && cd basic-deploy && git pull && npm install && pm2 start web &" 
